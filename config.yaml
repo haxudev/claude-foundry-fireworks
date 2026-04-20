@@ -1,0 +1,59 @@
+model_list:
+  # Canonical model - use custom_openai/ so LiteLLM can serve both
+  # /v1/chat/completions and /v1/responses against Foundry's OpenAI-compatible endpoint.
+  - model_name: FW-GLM-5
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  # Aliases so Claude Code's hardcoded model names route to FW-GLM-5
+  - model_name: claude-sonnet-4-5
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  - model_name: claude-sonnet-4-5-20250929
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  - model_name: claude-opus-4-5
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  - model_name: claude-opus-4-7
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+  - model_name: claude-3-5-haiku-20241022
+    litellm_params:
+      model: custom_openai/FW-GLM-5
+      api_base: os.environ/AZURE_FOUNDRY_ENDPOINT
+      api_key: os.environ/AZURE_FOUNDRY_API_KEY
+      drop_params: true
+
+litellm_settings:
+  drop_params: true
+  callbacks: param_filter.proxy_handler_instance
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
