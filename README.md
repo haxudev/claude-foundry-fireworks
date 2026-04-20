@@ -16,7 +16,7 @@ Inspired by [sjalq/claude-fireworks](https://github.com/sjalq/claude-fireworks).
       │  Anthropic-facing at /v1/messages
       │  backend mapped with custom_openai/FW-GLM-5
       ▼
-  https://haxufoundry-wus2-resource.services.ai.azure.com/openai/v1
+  https://your-resource.services.ai.azure.com/openai/v1
       │
       ▼
   FW-GLM-5  (accounts/fireworks/models/glm-5)

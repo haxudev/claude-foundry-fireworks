@@ -15,7 +15,7 @@ if [[ -f .env ]]; then
 fi
 
 : "${AZURE_FOUNDRY_API_KEY:?AZURE_FOUNDRY_API_KEY not set (put it in .env)}"
-: "${AZURE_FOUNDRY_ENDPOINT:=https://haxufoundry-wus2-resource.services.ai.azure.com/openai/v1}"
+: "${AZURE_FOUNDRY_ENDPOINT:=https://your-resource.services.ai.azure.com/openai/v1}"
 export AZURE_FOUNDRY_API_KEY AZURE_FOUNDRY_ENDPOINT
 
 PORT="${LITELLM_PORT:-4111}"
