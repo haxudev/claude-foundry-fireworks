@@ -37,24 +37,66 @@ is_proxy_up() {
   curl -fsS "http://127.0.0.1:${PORT}/health/liveliness" >/dev/null 2>&1
 }
 
+get_proxy_pid() {
+  python3 - "$PORT" <<'PY'
+import re, subprocess, sys
+port = sys.argv[1]
+try:
+    out = subprocess.check_output([
+        'bash', '-lc', f'ss -ltnp "( sport = :{port} )"'
+    ], text=True, stderr=subprocess.DEVNULL)
+except Exception:
+    raise SystemExit(0)
+m = re.search(r'pid=(\d+)', out)
+if m:
+    print(m.group(1))
+PY
+}
+
 stop_proxy() {
+  local pid=""
   if [[ -f "$PID_FILE" ]]; then
-    local pid
     pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-    if [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null; then
-      log "Stopping LiteLLM proxy (pid $pid)"
-      kill "$pid" 2>/dev/null || true
+  fi
+
+  if [[ -z "${pid:-}" ]]; then
+    pid="$(get_proxy_pid || true)"
+  fi
+
+  if [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null; then
+    log "Stopping LiteLLM proxy (pid $pid)"
+    kill "$pid" 2>/dev/null || true
+    for _ in $(seq 1 10); do
+      if ! kill -0 "$pid" 2>/dev/null; then
+        break
+      fi
       sleep 1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
       kill -9 "$pid" 2>/dev/null || true
     fi
-    rm -f "$PID_FILE"
   fi
+
+  for _ in $(seq 1 10); do
+    if ! is_proxy_up; then
+      break
+    fi
+    sleep 1
+  done
+
+  rm -f "$PID_FILE"
 }
 
 start_proxy() {
+  local foreground="${1:-0}"
   if is_proxy_up; then
-    log "LiteLLM proxy already running on :$PORT"
-    return 0
+    local existing_pid=""
+    existing_pid="$(get_proxy_pid || true)"
+    if [[ -n "${existing_pid:-}" ]]; then
+      log "LiteLLM proxy already running on :$PORT (pid $existing_pid)"
+      echo "$existing_pid" >"$PID_FILE"
+      return 0
+    fi
   fi
 
   if [[ ! -x "$LITELLM_BIN" ]] && ! command -v litellm >/dev/null 2>&1; then
@@ -62,6 +104,14 @@ start_proxy() {
     exit 1
   fi
   [[ -x "$LITELLM_BIN" ]] || LITELLM_BIN="$(command -v litellm)"
+
+  if [[ "$foreground" == "1" ]]; then
+    log "Starting LiteLLM proxy in foreground on :$PORT"
+    exec "$LITELLM_BIN" \
+        --config "$SCRIPT_DIR/config.yaml" \
+        --host 127.0.0.1 \
+        --port "$PORT"
+  fi
 
   log "Starting LiteLLM proxy on :$PORT (log: $LOG_FILE)"
   : >"$LOG_FILE"
@@ -90,7 +140,7 @@ run_claude() {
 
   export ANTHROPIC_BASE_URL="http://127.0.0.1:$PORT"
   export ANTHROPIC_AUTH_TOKEN="$LITELLM_MASTER_KEY"
-  export ANTHROPIC_API_KEY="$LITELLM_MASTER_KEY"
+  unset ANTHROPIC_API_KEY
   export ANTHROPIC_MODEL="claude-sonnet-4-5"
   export ANTHROPIC_DEFAULT_SONNET_MODEL="claude-sonnet-4-5"
   export ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5"
@@ -104,6 +154,9 @@ run_claude() {
 case "${1:-run}" in
   start)
     start_proxy
+    ;;
+  serve)
+    start_proxy 1
     ;;
   stop)
     stop_proxy

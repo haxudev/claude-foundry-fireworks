@@ -53,6 +53,7 @@ model_list:
 
 litellm_settings:
   drop_params: true
+  modify_params: true
   callbacks: param_filter.proxy_handler_instance
 
 general_settings:
